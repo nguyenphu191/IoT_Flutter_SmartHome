@@ -12,6 +12,13 @@ class DataSensor extends StatefulWidget {
 class _DataSensorState extends State<DataSensor> {
   final DataSensorSource _dataSource = DataSensorSource(fakedata.ListDT);
   bool _isAscending = true;
+  TextEditingController _searchController = TextEditingController();
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -91,7 +98,8 @@ class _DataSensorState extends State<DataSensor> {
                           color: const Color.fromARGB(255, 255, 255, 255)
                               .withOpacity(0.8),
                         ),
-                        child: const TextField(
+                        child: TextField(
+                          controller: _searchController,
                           decoration: InputDecoration(
                             hintText: 'Search',
                             hintStyle: TextStyle(
@@ -118,7 +126,9 @@ class _DataSensorState extends State<DataSensor> {
                             ),
                           ),
                           onTap: () {
-                            // TODO: Implement search functionality
+                            setState(() {
+                              _dataSource.filterND(_searchController.text);
+                            });
                           },
                         ),
                       ),
@@ -138,7 +148,7 @@ class _DataSensorState extends State<DataSensor> {
                           onPressed: () {
                             setState(() {
                               _isAscending = true;
-                              _dataSource.sortByTemperature(_isAscending);
+                              _dataSource.sortND(_isAscending);
                             });
                           }),
                       IconButton(
@@ -150,7 +160,7 @@ class _DataSensorState extends State<DataSensor> {
                           onPressed: () {
                             setState(() {
                               _isAscending = false;
-                              _dataSource.sortByTemperature(_isAscending);
+                              _dataSource.sortND(_isAscending);
                             });
                           }),
                     ],
@@ -175,7 +185,7 @@ class _DataSensorState extends State<DataSensor> {
                 child: PaginatedDataTable(
                   columns: const [
                     DataColumn(label: Text('ID')),
-                    DataColumn(label: Text('Nhiêt độ')),
+                    DataColumn(label: Text('Nhiệt độ')),
                     DataColumn(label: Text('Độ ẩm')),
                     DataColumn(label: Text('Ánh sáng')),
                     DataColumn(label: Text('Thời gian')),

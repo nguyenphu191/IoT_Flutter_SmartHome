@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_home/widgets/big_text.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -100,15 +101,54 @@ class _ProfileState extends State<Profile> {
                     child: Container(
                       height: 300,
                       width: 320,
-                      child: Column(
-                        children: [
-                          BigText('', text: 'Name: Nguyễn Văn Phú'),
-                          SizedBox(height: 10),
-                          BigText('', text: 'MSV: B21DCCN592'),
-                          SizedBox(height: 10),
-                          BigText('', text: 'Phone: 0934320943'),
-                          SizedBox(height: 10),
-                        ],
+                      child: Center(
+                        child: Column(
+                          children: [
+                            BigText('', text: 'Name: Nguyễn Văn Phú'),
+                            SizedBox(height: 10),
+                            BigText('', text: 'MSV: B21DCCN592'),
+                            SizedBox(height: 10),
+                            BigText('', text: 'Phone: 0934320943'),
+                            SizedBox(height: 10),
+                            InkWell(
+                              child: Text(
+                                'GitHub: https://github.com/nguyenphu191/IoT_Flutter_SmartHome',
+                                style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.blue,
+                                    decoration: TextDecoration.underline),
+                              ),
+                              onTap: () async {
+                                const url =
+                                    'https://github.com/nguyenphu191/IoT_Flutter_SmartHome';
+                                if (await canLaunch(url)) {
+                                  await launch(url);
+                                } else {
+                                  throw 'Could not launch $url';
+                                }
+                              },
+                            ),
+                            SizedBox(height: 10),
+                            InkWell(
+                              child: Text(
+                                'Link báo cáo',
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.blue,
+                                    decoration: TextDecoration.underline),
+                              ),
+                              onTap: () async {
+                                const url =
+                                    'https://github.com/nguyenphu191/IoT_Flutter_SmartHome';
+                                if (await canLaunch(url)) {
+                                  await launch(url);
+                                } else {
+                                  throw 'Could not launch $url';
+                                }
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
