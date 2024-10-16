@@ -6,6 +6,7 @@ import 'package:smart_home/pages/Home.dart';
 
 import 'package:get/get.dart';
 
+
 Future<void> main() async {
   runApp(const MyApp());
 }

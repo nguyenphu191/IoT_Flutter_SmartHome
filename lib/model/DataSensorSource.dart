@@ -23,12 +23,14 @@ class DataSensorSource extends DataTableSource {
     } else {
       final temp = double.tryParse(x);
       if (temp != null) {
-        _filterDetails =
-            _details.where((detail) => detail.nhiet_do == temp).toList();
+        _filterDetails = _details
+            .where((detail) => detail.nhiet_do.floor() == temp.floor())
+            .toList();
       } else {
         _filterDetails = [];
       }
     }
+    print(_filterDetails.map((detail) => detail.toJson()).toList());
     notifyListeners(); // Gọi hàm này để cập nhật UI
   }
 
@@ -55,4 +57,8 @@ class DataSensorSource extends DataTableSource {
 
   @override
   int get selectedRowCount => 0;
+
+  List<Detail> getFilteredDetails() {
+    return _filterDetails;
+  }
 }

@@ -65,6 +65,39 @@ class _ProfileState extends State<Profile> {
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.bold),
                   ),
+                  Container(
+                    height: 50,
+                    width: 50,
+                    child: PopupMenuButton<String>(
+                      itemBuilder: (BuildContext context) {
+                        return <PopupMenuEntry<String>>[
+                          PopupMenuItem<String>(
+                            value: 'page1',
+                            child: BigText('', text: 'Home', size: 15),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'page2',
+                            child: BigText('', text: 'Data Sensor', size: 15),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'page3',
+                            child:
+                                BigText('', text: 'Action History', size: 15),
+                          ),
+                        ];
+                      },
+                      onSelected: (String value) {
+                        // Xử lý khi lựa chọn một mục trong danh sách
+                        if (value == 'page1') {
+                          Navigator.pushNamed(context, '/');
+                        } else if (value == 'page2') {
+                          Navigator.pushNamed(context, '/datasensor');
+                        } else {
+                          Navigator.pushNamed(context, '/actionhistory');
+                        }
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -121,13 +154,35 @@ class _ProfileState extends State<Profile> {
                               onTap: () async {
                                 const url =
                                     'https://github.com/nguyenphu191/IoT_Flutter_SmartHome';
-                                if (await canLaunch(url)) {
-                                  await launch(url);
+                                final uri = Uri.parse(url);
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(uri);
                                 } else {
-                                  throw 'Could not launch $url';
+                                  throw 'Could not launch';
                                 }
                               },
                             ),
+                            SizedBox(height: 10),
+                            InkWell(
+                              child: Text(
+                                'APIDOCS',
+                                style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.blue,
+                                    decoration: TextDecoration.underline),
+                              ),
+                              onTap: () async {
+                                const url =
+                                    'https://docs.google.com/document/d/1vdeOPBJDAESwTpxEDjuEOtugXHnCOxKlR9JNKg6OQEg/edit?usp=sharing';
+                                final uri = Uri.parse(url);
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(uri);
+                                } else {
+                                  throw 'Could not launch';
+                                }
+                              },
+                            ),
+                            SizedBox(height: 10),
                             SizedBox(height: 10),
                             InkWell(
                               child: Text(
@@ -140,10 +195,14 @@ class _ProfileState extends State<Profile> {
                               onTap: () async {
                                 const url =
                                     'https://github.com/nguyenphu191/IoT_Flutter_SmartHome';
-                                if (await canLaunch(url)) {
-                                  await launch(url);
+                                final uri = Uri.parse(url);
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
                                 } else {
-                                  throw 'Could not launch $url';
+                                  throw 'Could not launch';
                                 }
                               },
                             ),

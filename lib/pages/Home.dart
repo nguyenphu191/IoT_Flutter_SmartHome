@@ -1,8 +1,11 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:smart_home/model/Detail.dart';
+import 'package:smart_home/model/DeviceHis.dart';
+import 'package:smart_home/service/api_service.dart';
 import 'package:smart_home/widgets/big_text.dart';
-import 'package:smart_home/data/fakedata.dart' as fakedata;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,14 +15,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Detail> data = fakedata.ListDT;
-  double nhietdo = 30;
-  double doam = 80;
-  double as = 400;
+  late List<Detail> data = [];
+  late Detail nowdetail;
+  double nhietdo = 0;
+  double doam = 0;
+  double as = 0;
   bool _isSwitched1 = false;
   bool _isSwitched2 = false;
   bool _isSwitched3 = false;
-  late List<double> temperatureData;
+  final ApiService apiService = ApiService();
+
+  void controlled(String device, String action) async {
+    try {
+      await apiService.controlled(device, action);
+    } catch (e) {
+      print('Lỗi điều khiển: $e');
+    }
+  }
+
   void _toggleSwitch1() {
     setState(() {
       _isSwitched1 = !_isSwitched1;
@@ -38,7 +51,63 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  // Function to generate color gradient based on value
+  @override
+  void initState() {
+    super.initState();
+    _fetchTodayData();
+    _fetchDataDevice();
+    _fetchNowDetail();
+  }
+
+  Future<void> _fetchTodayData() async {
+    try {
+      List<Detail> fetchedData = await ApiService().fetchDetail();
+      setState(() {
+        data = fetchedData;
+      });
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+  Future<void> _fetchDataDevice() async {
+    try {
+      List<DeviceHis> fetchedData = await ApiService().fetchAllDeviceHis();
+      fetchedData = fetchedData.reversed.toList();
+      for (var device in fetchedData) {
+        if (device.ten == 'Quạt') {
+          setState(() {
+            _isSwitched1 = device.tinh_trang == 'ON';
+          });
+        } else if (device.ten == 'Đèn') {
+          setState(() {
+            _isSwitched2 = device.tinh_trang == 'ON';
+          });
+        } else if (device.ten == 'Điều hòa') {
+          setState(() {
+            _isSwitched3 = device.tinh_trang == 'ON';
+          });
+        }
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+  Future<void> _fetchNowDetail() async {
+    try {
+      List<Detail> fetchedData = await ApiService().fetchDetail();
+      setState(() {
+        nowdetail = fetchedData.last;
+        nhietdo = nowdetail.nhiet_do;
+        doam = nowdetail.do_am;
+        as = nowdetail.anh_sang;
+      });
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
   LinearGradient _generateGradient(
       Color startColor, Color endColor, double value, double min, double max) {
     double normalizedValue = (value - min) / (max - min);
@@ -83,7 +152,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Welcome to FuSmartHome',
+                    'Fu Smart Home',
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: 25,
@@ -134,12 +203,12 @@ class _HomePageState extends State<HomePage> {
               left: 10,
               right: 10,
               child: Container(
-                height: 300,
+                height: 350,
                 width: double.maxFinite,
                 child: PageView(
                   children: [
                     Container(
-                      height: 300,
+                      height: 350,
                       width: double.maxFinite,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
@@ -214,7 +283,7 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.black,
                           ),
                           Container(
-                            height: 230,
+                            height: 270,
                             width: double.maxFinite,
                             margin: EdgeInsets.only(top: 10),
                             child: LineChart(
@@ -226,7 +295,7 @@ class _HomePageState extends State<HomePage> {
                                     leftTitles: AxisTitles(
                                       sideTitles: SideTitles(
                                         showTitles: true,
-                                        interval: 20, // Khoảng cách giữa các số
+                                        interval: 5, // Khoảng cách giữa các số
                                         reservedSize: 40,
                                       ),
                                     ),
@@ -253,7 +322,7 @@ class _HomePageState extends State<HomePage> {
                                 minX: 0,
                                 maxX: data.length.toDouble() - 1,
                                 minY: 0,
-                                maxY: 100,
+                                maxY: 60,
                                 lineBarsData: [
                                   LineChartBarData(
                                     spots: data
@@ -263,8 +332,8 @@ class _HomePageState extends State<HomePage> {
                                             e.key.toDouble(), e.value.nhiet_do))
                                         .toList(),
                                     isCurved: true,
-                                    color: Colors.red,
-                                    barWidth: 4,
+                                    color: const Color.fromARGB(255, 1, 1, 1),
+                                    barWidth: 1,
                                     belowBarData: BarAreaData(show: true),
                                   ),
                                 ],
@@ -275,7 +344,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     Container(
-                      height: 300,
+                      height: 350,
                       width: double.maxFinite,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
@@ -350,7 +419,7 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.black,
                           ),
                           Container(
-                            height: 230,
+                            height: 270,
                             width: double.maxFinite,
                             margin: EdgeInsets.only(top: 10),
                             child: LineChart(
@@ -362,7 +431,7 @@ class _HomePageState extends State<HomePage> {
                                   leftTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
-                                      interval: 20, // Khoảng cách giữa các số
+                                      interval: 10, // Khoảng cách giữa các số
                                       reservedSize: 40,
                                     ),
                                   ),
@@ -389,7 +458,7 @@ class _HomePageState extends State<HomePage> {
                                 borderData: FlBorderData(show: true),
                                 minX: 0,
                                 maxX: data.length.toDouble() - 1,
-                                minY: 0,
+                                minY: 10,
                                 maxY: 100,
                                 lineBarsData: [
                                   LineChartBarData(
@@ -400,8 +469,8 @@ class _HomePageState extends State<HomePage> {
                                             e.key.toDouble(), e.value.do_am))
                                         .toList(),
                                     isCurved: true,
-                                    color: Colors.blue,
-                                    barWidth: 4,
+                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                    barWidth: 1,
                                     belowBarData: BarAreaData(show: true),
                                   ),
                                 ],
@@ -412,7 +481,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     Container(
-                      height: 300,
+                      height: 350,
                       width: double.maxFinite,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
@@ -487,7 +556,7 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.black,
                           ),
                           Container(
-                            height: 230,
+                            height: 270,
                             width: double.maxFinite,
                             margin: EdgeInsets.only(top: 10),
                             child: LineChart(
@@ -537,8 +606,8 @@ class _HomePageState extends State<HomePage> {
                                             e.key.toDouble(), e.value.anh_sang))
                                         .toList(),
                                     isCurved: true,
-                                    color: Colors.yellow,
-                                    barWidth: 4,
+                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                    barWidth: 1,
                                     belowBarData: BarAreaData(show: true),
                                   ),
                                 ],
@@ -552,7 +621,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               )),
           Positioned(
-            top: 430,
+            top: 480,
             left: 10,
             right: 10,
             child: Column(
@@ -578,14 +647,16 @@ class _HomePageState extends State<HomePage> {
                                 height: 70,
                                 width: 70,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(50),
-                                  image: DecorationImage(
-                                    image: _isSwitched1
-                                        ? AssetImage('assets/images/fan2.jpg')
-                                        : AssetImage('assets/images/fan1.png'),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                                    borderRadius: BorderRadius.circular(50),
+                                    color: Colors.white),
+                                child: _isSwitched1
+                                    ? Icon(Icons.air,
+                                        size: 60, color: Colors.blue)
+                                    : Icon(
+                                        Icons.air,
+                                        size: 60,
+                                        color: Colors.black,
+                                      ),
                               ),
                               Container(
                                 margin: EdgeInsets.only(left: 10, right: 10),
@@ -596,7 +667,11 @@ class _HomePageState extends State<HomePage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       GestureDetector(
-                                        onTap: _toggleSwitch1,
+                                        onTap: () {
+                                          _toggleSwitch1();
+                                          controlled('device1',
+                                              _isSwitched1 ? 'ON' : 'OFF');
+                                        },
                                         child: Container(
                                           height: 40,
                                           width: 40,
@@ -644,16 +719,31 @@ class _HomePageState extends State<HomePage> {
                                 margin: EdgeInsets.only(left: 10),
                                 height: 70,
                                 width: 70,
+                                // decoration: BoxDecoration(
+                                //   borderRadius:
+                                //       BorderRadius.circular(50),
+                                //   image: DecorationImage(
+                                //     image: _isSwitched2
+                                //         ? AssetImage(
+                                //             'assets/images/light3.png')
+                                //         : AssetImage(
+                                //             'assets/images/light1.jpg'),
+                                //     fit: BoxFit.cover,
+                                //   ),
+                                // ),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(50),
-                                  image: DecorationImage(
-                                    image: _isSwitched2
-                                        ? AssetImage('assets/images/light3.png')
-                                        : AssetImage(
-                                            'assets/images/light1.jpg'),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                                    borderRadius: BorderRadius.circular(50),
+                                    color: Colors.white),
+                                child: _isSwitched2
+                                    ? Icon(FontAwesomeIcons.lightbulb,
+                                        size: 60,
+                                        color: const Color.fromARGB(
+                                            255, 255, 230, 0))
+                                    : Icon(
+                                        FontAwesomeIcons.lightbulb,
+                                        size: 60,
+                                        color: Colors.black,
+                                      ),
                               ),
                               Container(
                                 margin: EdgeInsets.only(left: 10, right: 10),
@@ -664,7 +754,11 @@ class _HomePageState extends State<HomePage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       GestureDetector(
-                                        onTap: _toggleSwitch2,
+                                        onTap: () {
+                                          _toggleSwitch2();
+                                          controlled('device2',
+                                              _isSwitched2 ? 'ON' : 'OFF');
+                                        },
                                         child: Container(
                                           height: 40,
                                           width: 40,
@@ -708,33 +802,22 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _isSwitched3
-                                  ? Container(
-                                      margin: EdgeInsets.only(left: 10),
-                                      height: 40,
-                                      width: 75,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(0),
-                                        image: DecorationImage(
-                                          image: AssetImage(
-                                              'assets/images/aircon2.png'),
-                                          fit: BoxFit.cover,
-                                        ),
+                              Container(
+                                margin: EdgeInsets.only(left: 10),
+                                height: 70,
+                                width: 70,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(50),
+                                    color: Colors.white),
+                                child: _isSwitched3
+                                    ? Icon(Icons.ac_unit,
+                                        size: 60, color: Colors.blue)
+                                    : Icon(
+                                        Icons.ac_unit,
+                                        size: 60,
+                                        color: Colors.black,
                                       ),
-                                    )
-                                  : Container(
-                                      margin: EdgeInsets.only(left: 10),
-                                      height: 26,
-                                      width: 75,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(0),
-                                        image: DecorationImage(
-                                          image: AssetImage(
-                                              'assets/images/aircon1.png'),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
+                              ),
                               Container(
                                 margin: EdgeInsets.only(left: 10, right: 10),
                                 height: 50,
@@ -744,7 +827,11 @@ class _HomePageState extends State<HomePage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       GestureDetector(
-                                        onTap: _toggleSwitch3,
+                                        onTap: () {
+                                          _toggleSwitch3();
+                                          controlled('device3',
+                                              _isSwitched3 ? 'ON' : 'OFF');
+                                        },
                                         child: Container(
                                           height: 40,
                                           width: 40,
@@ -783,5 +870,11 @@ class _HomePageState extends State<HomePage> {
         ],
       )),
     );
+  }
+
+  @override
+  void dispose() {
+    // mqttService.disconnect(); // Ngắt kết nối khi không cần thiết
+    super.dispose();
   }
 }
