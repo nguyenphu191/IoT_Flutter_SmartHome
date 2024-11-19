@@ -1,11 +1,57 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:smart_home/model/Wind.dart';
 import 'package:smart_home/model/Detail.dart';
 import 'package:smart_home/model/DeviceHis.dart';
 
 class ApiService {
   final String baseUrl = 'http://172.20.10.2/api';
   // final String baseUrl = 'http://localhost:5000/api';
+  Future<List<Wind>> fetchWS() async {
+    List<Wind> alldata = [];
+    int page = 1;
+    int limit = 10;
+    bool hasMoreData = true;
+
+    while (hasMoreData) {
+      final response = await http.get(
+        Uri.parse('$baseUrl/ws/getByPage?page=$page&limit=$limit'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['wss'] != null && data['wss'] is List) {
+          List<Wind> dt = (data['wss'] as List)
+              .map((dtJson) => Wind.fromJson(dtJson))
+              .toList();
+
+          if (dt.isNotEmpty) {
+            alldata.addAll(dt);
+            page++;
+          } else {
+            hasMoreData = false;
+          }
+        } else {
+          hasMoreData = false; // Không có dữ liệu để tải thêm
+        }
+      } else {
+        throw Exception('Failed to load Detail');
+      }
+    }
+
+    return alldata;
+  }
+
+  Future<Map<String, dynamic>> getDeviceCounts() async {
+    final url = Uri.parse('$baseUrl/device_counts');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch device counts');
+    }
+  }
 
   Future<void> PostDetail(Detail detail) async {
     try {
@@ -40,7 +86,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      print('$device turned $action');
+      return jsonDecode(response.body);
     } else {
       throw Exception('Failed to control LED');
     }
@@ -111,17 +157,17 @@ class ApiService {
     }
   }
 
-  Future<List<Detail>> searchDetailsByTemperature(int temperature) async {
+  Future<List<Detail>> searchDetails(String t) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/details/searchByTemperature?nhiet_do=$temperature'),
+        Uri.parse('$baseUrl/details/search?query=$t'),
       );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((detailJson) => Detail.fromJson(detailJson)).toList();
       } else {
-        throw Exception('Failed to search details by temperature');
+        throw Exception('Failed to search details');
       }
     } catch (e) {
       throw Exception('Error fetching details: $e');
@@ -186,7 +232,7 @@ class ApiService {
   Future<List<DeviceHis>> searchDevice(String t) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/devicehis/search?tinh_trang=$t'),
+        Uri.parse('$baseUrl/devicehis/search?thoi_gian=$t'),
       );
 
       if (response.statusCode == 200) {

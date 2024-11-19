@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:smart_home/pages/ActHis.dart';
+import 'package:smart_home/pages/WindPage.dart';
 import 'package:smart_home/pages/DataSenSor.dart';
 import 'package:smart_home/pages/Profile.dart';
 import 'package:smart_home/pages/Home.dart';
 
 import 'package:get/get.dart';
-
 
 Future<void> main() async {
   runApp(const MyApp());
@@ -29,6 +29,7 @@ class MyApp extends StatelessWidget {
           '/datasensor': (context) => DataSensor(),
           '/actionhistory': (context) => ActHis(),
           '/profile': (context) => Profile(),
+          '/cbf': (context) => WindPage(),
         },
       ),
     );

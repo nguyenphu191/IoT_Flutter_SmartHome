@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:smart_home/model/Detail.dart';
 import 'package:smart_home/model/DeviceHis.dart';
 import 'package:smart_home/service/api_service.dart';
@@ -23,13 +23,100 @@ class _HomePageState extends State<HomePage> {
   bool _isSwitched1 = false;
   bool _isSwitched2 = false;
   bool _isSwitched3 = false;
+  bool _isloading1 = false;
+  bool _isloading2 = false;
+  bool _isloading3 = false;
   final ApiService apiService = ApiService();
+  Timer? _timer;
 
   void controlled(String device, String action) async {
-    try {
-      await apiService.controlled(device, action);
-    } catch (e) {
-      print('Lỗi điều khiển: $e');
+    bool res = false;
+    if (device == "device1") {
+      setState(() {
+        _isloading1 = true;
+      });
+      try {
+        await Future.any([
+          apiService.controlled(device, action).then((_) {
+            res = true;
+          }),
+          Future.delayed(Duration(seconds: 5)),
+        ]);
+
+        // Nếu không nhận được phản hồi sau 5 giây
+        if (!res) {
+          _toggleSwitch1();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Không thể điều khiển thiết bị, vui lòng thử lại sau.')),
+          );
+        }
+      } catch (e) {
+        print('Lỗi điều khiển: $e');
+      } finally {
+        setState(() {
+          _isloading1 = false;
+        });
+      }
+    } else if (device == "device2") {
+      setState(() {
+        _isloading2 = true;
+      });
+      try {
+        await Future.any([
+          apiService.controlled(device, action).then((_) {
+            res = true;
+          }),
+          Future.delayed(Duration(seconds: 5)),
+        ]);
+
+        // Nếu không nhận được phản hồi sau 5 giây
+        if (!res) {
+          _toggleSwitch2();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Không thể điều khiển thiết bị, vui lòng thử lại sau.')),
+          );
+        }
+      } catch (e) {
+        print('Lỗi điều khiển: $e');
+        _toggleSwitch2();
+      } finally {
+        setState(() {
+          _isloading2 = false;
+        });
+      }
+    } else if (device == "device3") {
+      setState(() {
+        _isloading3 = true;
+      });
+      try {
+        await Future.any([
+          apiService.controlled(device, action).then((_) {
+            res = true;
+          }),
+          Future.delayed(Duration(seconds: 5)),
+        ]);
+
+        // Nếu không nhận được phản hồi sau 5 giây
+        if (!res) {
+          _toggleSwitch3();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Không thể điều khiển thiết bị, vui lòng thử lại sau.')),
+          );
+        }
+      } catch (e) {
+        print('Lỗi điều khiển: $e');
+        _toggleSwitch3();
+      } finally {
+        setState(() {
+          _isloading3 = false;
+        });
+      }
     }
   }
 
@@ -51,17 +138,32 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
+  void _startAutoRefresh() {
     _fetchTodayData();
     _fetchDataDevice();
     _fetchNowDetail();
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
+      _fetchTodayData();
+      _fetchDataDevice();
+      _fetchNowDetail();
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchTodayData() async {
     try {
-      List<Detail> fetchedData = await ApiService().fetchDetail();
+      List<Detail> fetchedData = await apiService.fetchDetail();
       setState(() {
         data = fetchedData;
       });
@@ -98,7 +200,7 @@ class _HomePageState extends State<HomePage> {
     try {
       List<Detail> fetchedData = await ApiService().fetchDetail();
       setState(() {
-        nowdetail = fetchedData.last;
+        nowdetail = fetchedData.first;
         nhietdo = nowdetail.nhiet_do;
         doam = nowdetail.do_am;
         as = nowdetail.anh_sang;
@@ -179,16 +281,21 @@ class _HomePageState extends State<HomePage> {
                               value: 'page3',
                               child: BigText('', text: 'Profile', size: 15),
                             ),
+                            PopupMenuItem<String>(
+                              value: 'page4',
+                              child: BigText('', text: 'Bài 5', size: 15),
+                            ),
                           ];
                         },
                         onSelected: (String value) {
-                          // Xử lý khi lựa chọn một mục trong danh sách
                           if (value == 'page1') {
                             Navigator.pushNamed(context, '/datasensor');
                           } else if (value == 'page2') {
                             Navigator.pushNamed(context, '/actionhistory');
-                          } else {
+                          } else if (value == 'page3') {
                             Navigator.pushNamed(context, '/profile');
+                          } else {
+                            Navigator.pushNamed(context, '/cbf');
                           }
                         },
                       ),
@@ -303,15 +410,6 @@ class _HomePageState extends State<HomePage> {
                                     bottomTitles: AxisTitles(
                                       sideTitles: SideTitles(
                                         showTitles: false,
-                                        // getTitlesWidget: (value, meta) {
-                                        //   int index = value.toInt();
-                                        //   if (index >= 0 && index < data.length) {
-                                        //     return Text(data[index]
-                                        //         .thoi_gian
-                                        //         .split(' ')[0]);
-                                        //   }
-                                        //   return Text('');
-                                        // },
                                       ),
                                     ),
                                     topTitles: AxisTitles(
@@ -639,68 +737,79 @@ class _HomePageState extends State<HomePage> {
                             color: const Color.fromARGB(255, 250, 206, 206),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(left: 10),
-                                height: 70,
-                                width: 70,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(50),
-                                    color: Colors.white),
-                                child: _isSwitched1
-                                    ? Icon(Icons.air,
-                                        size: 60, color: Colors.blue)
-                                    : Icon(
-                                        Icons.air,
-                                        size: 60,
-                                        color: Colors.black,
-                                      ),
-                              ),
-                              Container(
-                                margin: EdgeInsets.only(left: 10, right: 10),
-                                height: 50,
-                                width: 100,
-                                child: Center(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () {
-                                          _toggleSwitch1();
-                                          controlled('device1',
-                                              _isSwitched1 ? 'ON' : 'OFF');
-                                        },
-                                        child: Container(
-                                          height: 40,
-                                          width: 40,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(50),
-                                          ),
-                                          child: Icon(
+                          child: _isloading1
+                              ? CircularProgressIndicator()
+                              : Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      margin: EdgeInsets.only(left: 10),
+                                      height: 70,
+                                      width: 70,
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(50),
+                                          color: Colors.white),
+                                      child: _isSwitched1
+                                          ? Icon(Icons.air,
+                                              size: 60, color: Colors.blue)
+                                          : Icon(
+                                              Icons.air,
+                                              size: 60,
+                                              color: Colors.black,
+                                            ),
+                                    ),
+                                    Container(
+                                      margin:
+                                          EdgeInsets.only(left: 10, right: 10),
+                                      height: 50,
+                                      width: 100,
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                _toggleSwitch1();
+                                                controlled(
+                                                    'device1',
+                                                    _isSwitched1
+                                                        ? 'ON'
+                                                        : 'OFF');
+                                              },
+                                              child: Container(
+                                                height: 40,
+                                                width: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(50),
+                                                ),
+                                                child: Icon(
+                                                  _isSwitched1
+                                                      ? Icons.check
+                                                      : Icons.close,
+                                                  size: 40,
+                                                  color: _isSwitched1
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 10,
+                                            ),
                                             _isSwitched1
-                                                ? Icons.check
-                                                : Icons.close,
-                                            size: 40,
-                                            color: _isSwitched1
-                                                ? Colors.green
-                                                : Colors.red,
-                                          ),
+                                                ? Text('ON')
+                                                : Text('OFF'),
+                                          ],
                                         ),
                                       ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      _isSwitched1 ? Text('ON') : Text('OFF'),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                         SizedBox(
                           height: 10,
@@ -712,82 +821,81 @@ class _HomePageState extends State<HomePage> {
                             color: const Color.fromARGB(255, 250, 206, 206),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(left: 10),
-                                height: 70,
-                                width: 70,
-                                // decoration: BoxDecoration(
-                                //   borderRadius:
-                                //       BorderRadius.circular(50),
-                                //   image: DecorationImage(
-                                //     image: _isSwitched2
-                                //         ? AssetImage(
-                                //             'assets/images/light3.png')
-                                //         : AssetImage(
-                                //             'assets/images/light1.jpg'),
-                                //     fit: BoxFit.cover,
-                                //   ),
-                                // ),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(50),
-                                    color: Colors.white),
-                                child: _isSwitched2
-                                    ? Icon(FontAwesomeIcons.lightbulb,
-                                        size: 60,
-                                        color: const Color.fromARGB(
-                                            255, 255, 230, 0))
-                                    : Icon(
-                                        FontAwesomeIcons.lightbulb,
-                                        size: 60,
-                                        color: Colors.black,
-                                      ),
-                              ),
-                              Container(
-                                margin: EdgeInsets.only(left: 10, right: 10),
-                                height: 50,
-                                width: 100,
-                                child: Center(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () {
-                                          _toggleSwitch2();
-                                          controlled('device2',
-                                              _isSwitched2 ? 'ON' : 'OFF');
-                                        },
-                                        child: Container(
-                                          height: 40,
-                                          width: 40,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(50),
-                                          ),
-                                          child: Icon(
+                          child: _isloading2
+                              ? CircularProgressIndicator()
+                              : Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      margin: EdgeInsets.only(left: 10),
+                                      height: 70,
+                                      width: 70,
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(50),
+                                          color: Colors.white),
+                                      child: _isSwitched2
+                                          ? Icon(FontAwesomeIcons.lightbulb,
+                                              size: 60,
+                                              color: const Color.fromARGB(
+                                                  255, 255, 230, 0))
+                                          : Icon(
+                                              FontAwesomeIcons.lightbulb,
+                                              size: 60,
+                                              color: Colors.black,
+                                            ),
+                                    ),
+                                    Container(
+                                      margin:
+                                          EdgeInsets.only(left: 10, right: 10),
+                                      height: 50,
+                                      width: 100,
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                _toggleSwitch2();
+                                                controlled(
+                                                    'device2',
+                                                    _isSwitched2
+                                                        ? 'ON'
+                                                        : 'OFF');
+                                              },
+                                              child: Container(
+                                                height: 40,
+                                                width: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(50),
+                                                ),
+                                                child: Icon(
+                                                  _isSwitched2
+                                                      ? Icons.check
+                                                      : Icons.close,
+                                                  size: 40,
+                                                  color: _isSwitched2
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 10,
+                                            ),
                                             _isSwitched2
-                                                ? Icons.check
-                                                : Icons.close,
-                                            size: 40,
-                                            color: _isSwitched2
-                                                ? Colors.green
-                                                : Colors.red,
-                                          ),
+                                                ? Text('ON')
+                                                : Text('OFF'),
+                                          ],
                                         ),
                                       ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      _isSwitched2 ? Text('ON') : Text('OFF'),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                         SizedBox(
                           height: 10,
@@ -799,69 +907,99 @@ class _HomePageState extends State<HomePage> {
                             color: const Color.fromARGB(255, 250, 206, 206),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(left: 10),
-                                height: 70,
-                                width: 70,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(50),
-                                    color: Colors.white),
-                                child: _isSwitched3
-                                    ? Icon(Icons.ac_unit,
-                                        size: 60, color: Colors.blue)
-                                    : Icon(
-                                        Icons.ac_unit,
-                                        size: 60,
-                                        color: Colors.black,
-                                      ),
-                              ),
-                              Container(
-                                margin: EdgeInsets.only(left: 10, right: 10),
-                                height: 50,
-                                width: 100,
-                                child: Center(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () {
-                                          _toggleSwitch3();
-                                          controlled('device3',
-                                              _isSwitched3 ? 'ON' : 'OFF');
-                                        },
-                                        child: Container(
-                                          height: 40,
-                                          width: 40,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(50),
-                                          ),
-                                          child: Icon(
+                          child: _isloading3
+                              ? CircularProgressIndicator()
+                              : Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      margin: EdgeInsets.only(left: 10),
+                                      height: 70,
+                                      width: 70,
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(50),
+                                          color: Colors.white),
+                                      child: _isSwitched3
+                                          ? Icon(Icons.ac_unit,
+                                              size: 60, color: Colors.blue)
+                                          : Icon(
+                                              Icons.ac_unit,
+                                              size: 60,
+                                              color: Colors.black,
+                                            ),
+                                    ),
+                                    Container(
+                                      margin:
+                                          EdgeInsets.only(left: 10, right: 10),
+                                      height: 50,
+                                      width: 100,
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                _toggleSwitch3();
+                                                controlled(
+                                                    'device3',
+                                                    _isSwitched3
+                                                        ? 'ON'
+                                                        : 'OFF');
+                                              },
+                                              child: Container(
+                                                height: 40,
+                                                width: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(50),
+                                                ),
+                                                child: Icon(
+                                                  _isSwitched3
+                                                      ? Icons.check
+                                                      : Icons.close,
+                                                  size: 40,
+                                                  color: _isSwitched3
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 10,
+                                            ),
                                             _isSwitched3
-                                                ? Icons.check
-                                                : Icons.close,
-                                            size: 30,
-                                            color: _isSwitched3
-                                                ? Colors.green
-                                                : Colors.red,
-                                          ),
+                                                ? Text('ON')
+                                                : Text('OFF'),
+                                          ],
                                         ),
                                       ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      _isSwitched3 ? Text('ON') : Text('OFF'),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
+                        // SizedBox(
+                        //   height: 10,
+                        // ),
+                        // Container(
+                        //   height: 60,
+                        //   width: double.maxFinite,
+                        //   decoration: BoxDecoration(
+                        //     color: const Color.fromARGB(255, 250, 206, 206),
+                        //     borderRadius: BorderRadius.circular(10),
+                        //   ),
+                        //   child: Row(
+                        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                        //     children: [
+                        //     Container(
+                        //       child: Text("Số lần bật/tắt",style: TextStyle(),),
+                        //     )
+                        //   ],)
+                        // ),
                       ],
                     )),
               ],
@@ -870,11 +1008,5 @@ class _HomePageState extends State<HomePage> {
         ],
       )),
     );
-  }
-
-  @override
-  void dispose() {
-    // mqttService.disconnect(); // Ngắt kết nối khi không cần thiết
-    super.dispose();
   }
 }

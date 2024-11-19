@@ -22,8 +22,7 @@ class _DataSensorState extends State<DataSensor> {
 
   void _searchByTemperature() {
     setState(() {
-      int searchTemp = int.tryParse(_searchController.text) ?? 0;
-      _detailFuture = _apiService.searchDetailsByTemperature(searchTemp);
+      _detailFuture = _apiService.searchDetails(_searchController.text);
     });
   }
 
