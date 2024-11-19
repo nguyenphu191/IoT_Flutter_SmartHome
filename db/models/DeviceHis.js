@@ -5,7 +5,8 @@ const DeviceHisSchema = new mongoose.Schema({
   id: {type: String, unique: true },
   ten: {type: String,required: true},
   tinh_trang: {type: String,required: true},
-  thoi_gian: {type: String,required: true}
+  thoi_gian: {type: String,required: true},
+  onCount: { type: Number, default: 0 },
 });
 
 // Trước khi lưu, tạo một id tự động

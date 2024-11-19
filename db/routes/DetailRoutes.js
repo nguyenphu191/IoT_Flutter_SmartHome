@@ -58,29 +58,39 @@ router.get('/getByPage', async (req, res) => {
     currentPage: page
   });
 });
-//Tìm kiếm sensor theo nhiệt độ
-router.get('/searchByTemperature', async (req, res) => {
-  const { nhiet_do } = req.query;
-
+//Tìm kiếm sensor 
+router.get('/search', async (req, res) => {
+  const { query } = req.query;
   try {
-    if (!nhiet_do) {
-      return res.status(400).json({ message: 'Missing nhiet_do parameter' });
+    if (!query) {
+      return res.status(400).json({ message: 'Missing query parameter' });
     }
 
-    // Tìm kiếm các bản ghi có phần nguyên của nhiet_do bằng với giá trị truyền vào
-    const details = await Detail.find({
-      $expr: {
-        $eq: [{ $floor: "$nhiet_do" }, parseInt(nhiet_do)] // So sánh phần nguyên của nhiet_do với giá trị truyền vào
-      }
-    });
+    let details;
 
-    // Trả về kết quả tìm kiếm
+    if (isNaN(query)) {
+      details = await Detail.find({
+        thoi_gian: { $regex: query, $options: 'i' }
+      });
+    } else {
+      const numericValue = parseInt(query, 10);
+      details = await Detail.find({
+        $or: [
+          { nhiet_do: numericValue },
+          { do_am: numericValue },
+          { anh_sang: numericValue }
+        ]
+      });
+    }
+
     res.json(details);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
 router.get('/today', async (req, res) => {
   try {
     const now = new Date();
@@ -89,17 +99,12 @@ router.get('/today', async (req, res) => {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-    // console.log('Start of day:', startOfDay);
-    // console.log('End of day:', endOfDay);
-
     const details = await Detail.find({
       thoi_gian: {
         $gte: startOfDay.toISOString(),
         $lt: endOfDay.toISOString(),
       },
     });
-
-    // console.log('Details found:', details);
     res.json({ details });
   } catch (error) {
     console.error('Error fetching details:', error);

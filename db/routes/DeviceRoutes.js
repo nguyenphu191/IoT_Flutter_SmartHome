@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const DeviceHis = require('../models/DeviceHis');
 const Counter = require('../models/Counter');
+const { format } = require('date-fns');
 
 // Lưu một lịch sử thiết bị mới (DeviceHis)
 async function getNextSequence(name) {
@@ -33,15 +34,18 @@ async function getNextSequence(name) {
 
 // Tìm kiếm lịch sử thiết bị (DeviceHis) theo ON/OFF
 router.get('/search', async (req, res) => {
-  const { tinh_trang } = req.query;
+  const {thoi_gian} = req.query;
   try {
-    const devicehis = await DeviceHis.find({ tinh_trang: { $regex: tinh_trang, $options: 'i' } });
-
-    res.json(devicehis);
+    if (!thoi_gian) {
+      return res.status(400).json({ message: 'Missing parameter' });
+    }
+    const deviceHis = await DeviceHis.find({ thoi_gian: { $regex: thoi_gian, $options: 'i' } });
+    
+    res.json(deviceHis);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Error', error });
   }
+  
 });
 
 // router.get('/', async (req, res) => {  
